@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/hass-mqtt-things.svg)](https://pypi.org/project/hass-mqtt-things/)
+
 # Home Assistant MQTT Things
 
 Library for rapid development of things to be integrated with Home Assistant through MQTT
