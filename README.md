@@ -30,7 +30,7 @@ and it will toggle every 5 seconds.
 
 ## More examples
 
-Check the [examples folder](tree/master/examples). You will find some more examples there.
+Check the [examples folder](examples). You will find some more examples there.
 
 ## Use cases
 
