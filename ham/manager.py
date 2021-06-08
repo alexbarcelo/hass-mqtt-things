@@ -13,25 +13,25 @@ from . import __version__
 
 
 class MqttManager(Thread):
-    things : List[Thing]
-    client : mqtt.Client
-    mqtt_host : str
-    mqtt_port : int
-    node_id : str
-    base_topic : str
-    name : str
+    things: List[Thing]
+    client: mqtt.Client
+    mqtt_host: str
+    mqtt_port: int
+    node_id: str
+    base_topic: str
+    name: str
 
-    def __init__(self, host='localhost', port=1883, username=None, password=None,
-                 *, node_id=None, base_topic=None, discovery_prefix='homeassistant',
-                 name=None):
+    def __init__(self, host='localhost', port=1883, username=None,
+                 password=None, *, node_id=None, base_topic=None,
+                 discovery_prefix='homeassistant', name=None):
         """Initialize connection to the MQTT the server.
-        
+
         This will prepare the MQTT connection using the provided configuration
-        (host, port, username and password). By default, connection will be done
-        to localhost:1883 without credentials.
+        (host, port, username and password). By default, connection will be
+        done to localhost:1883 without credentials.
 
         `node_id`, `base_topic` and `discovery_prefix` are optional parameters.
-        If not specified, the hostname will be used for both `node_id` and 
+        If not specified, the hostname will be used for both `node_id` and
         `base_topic` while the default 'homeassistant' will be used as the
         `discovery_prefix`.
         """
@@ -42,12 +42,12 @@ class MqttManager(Thread):
         self.client.on_message = self.on_message
         if username and password:
             self.client.username_pw_set(username, password=password)
-        
+
         self.mqtt_host = host
         self.mqtt_port = port
 
         self.discovery_prefix = discovery_prefix
-        
+
         # If node_id is not specified, the hostname will be used
         if node_id:
             self.node_id = node_id
@@ -68,7 +68,7 @@ class MqttManager(Thread):
 
         self.things = list()
 
-    def add_thing(self, thing : Thing):
+    def add_thing(self, thing: Thing):
         self.things.append(thing)
         thing.set_manager(self)
 
@@ -81,18 +81,18 @@ class MqttManager(Thread):
         print(f"Establishing connection to { self.mqtt_host }:{ self.mqtt_port }")
         self.client.connect(self.mqtt_host, self.mqtt_port)
         self.client.loop_forever()
-    
+
     def on_message(self, _, userdata, msg):
         """React to a MQTT message.
-        
+
         The derived class should reimplement this.
         """
         pass
 
-    @staticmethod    
+    @staticmethod
     def _format_mac(mac: str) -> str:
         """Format the mac address string for entry into dev reg.
-        
+
         This has been taken from homeassistant/helpers/device_registry.py
         """
         to_test = mac
@@ -107,7 +107,7 @@ class MqttManager(Thread):
 
         if len(to_test) == 12:
             # no : included
-            return ":".join(to_test.lower()[i : i + 2] for i in range(0, 12, 2))
+            return ":".join(to_test.lower()[i:i + 2] for i in range(0, 12, 2))
 
         # Not sure how formatted, return original
         return mac
@@ -146,7 +146,12 @@ class MqttManager(Thread):
             config["unique_id"] = f"{ self.get_mac() }_{ thing.short_id }"
 
             self.client.publish(
-                f"{ self.discovery_prefix }/{ thing.component }/{ self.node_id }/{ thing.short_id }/config",
+                "%s/%s/%s/%s/config" % (
+                    self.discovery_prefix,
+                    thing.component,
+                    self.node_id,
+                    thing.short_id
+                ),
                 json.dumps(config),
                 retain=True
             )
@@ -156,7 +161,6 @@ class MqttManager(Thread):
         ###########################
         self.client.publish(self.availability_topic, "online", retain=True)
         self.client.will_set(self.availability_topic, "offline", retain=True)
-
 
     def _gen_device_info(self) -> dict:
         """Generate the device information payload."""

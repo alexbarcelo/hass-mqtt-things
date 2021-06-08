@@ -18,6 +18,7 @@ MQTT_USERNAME = os.environ["MQTT_USERNAME"]
 MQTT_PASSWORD = os.environ["MQTT_PASSWORD"]
 MQTT_HOST = os.environ["MQTT_HOST"]
 
+
 class SimpleSwitch(OptimisticSwitch):
     name = "Awesomest Switch"
     short_id = "moreawesome"
@@ -39,7 +40,7 @@ if __name__ == "__main__":
 
     manager.start()
 
-    print("Entering an infinite loop, Ctrl+C multiple times to exit.")    
+    print("Entering an infinite loop, Ctrl+C multiple times to exit.")
     while True:
         sleep(5)
         main_switch.toggle()

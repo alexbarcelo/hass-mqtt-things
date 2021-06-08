@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 from .things import Thing
 from .utils import WrapperCallback
@@ -27,7 +27,7 @@ class Switch(Thing):
 
     def set_callbacks(self):
         self.mqtt_manager.client.message_callback_add(
-            f'{ self.mqtt_manager.base_topic }/{ self.short_id }/set', 
+            f'{ self.mqtt_manager.base_topic }/{ self.short_id }/set',
             WrapperCallback(self.raw_callback)
         )
 
@@ -40,7 +40,7 @@ class OptimisticSwitch(Switch):
     """
 
     _state: bool = False
-    
+
     @property
     def state(self):
         return self._state
@@ -62,7 +62,7 @@ class OptimisticSwitch(Switch):
 class ExplicitSwitch(Switch):
     """Track the state of the switch through explicit operations.
 
-    This switch will only publish its state when the state attribute is 
+    This switch will only publish its state when the state attribute is
     explicitly set, and the callback is not implemented.
 
     It is a good idea to use this switch for mechanisms that have a somewhat
@@ -72,7 +72,7 @@ class ExplicitSwitch(Switch):
     """
     def _set_state(self, value):
         self.publish_state(self._state)
-    
+
     # This is a write-only property, as the state is not tracked at Home Assistant
     state = property(fset=_set_state)
 

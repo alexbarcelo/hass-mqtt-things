@@ -4,7 +4,7 @@ The BaseSwitch is instantiated multiple times, and has an internal "index"
 attribute. The main idea is that the application developer can use whatever
 attributes or logic they need, and things can be dynamically instantiated.
 
-One should not abuse, as the objects will have a unique_id and will persist 
+One should not abuse, as the objects will have a unique_id and will persist
 in Home Assistant. It is a good idea to have a deterministic way of generating
 the `short_id`.
 """
@@ -18,6 +18,7 @@ MQTT_USERNAME = os.environ["MQTT_USERNAME"]
 MQTT_PASSWORD = os.environ["MQTT_PASSWORD"]
 MQTT_HOST = os.environ["MQTT_HOST"]
 
+
 class BaseSwitch(OptimisticSwitch):
     def __init__(self, index):
         self.index = index
@@ -27,6 +28,7 @@ class BaseSwitch(OptimisticSwitch):
     def callback(self, state):
         print("The switch #%02d has been set to %s" % (self.index, state))
 
+
 if __name__ == "__main__":
     switches = [BaseSwitch(i) for i in range(5)]
     manager = MqttManager(MQTT_HOST, username=MQTT_USERNAME, password=MQTT_PASSWORD)
@@ -34,7 +36,7 @@ if __name__ == "__main__":
 
     manager.start()
 
-    print("Entering an infinite loop, Ctrl+C multiple times to exit.")    
+    print("Entering an infinite loop, Ctrl+C multiple times to exit.")
     state = False
     while True:
         for s in switches:

@@ -20,7 +20,7 @@ class Thing(metaclass=ABCMeta):
 
     def set_callbacks(self):
         """Establish the callbacks for this Thing.
-        
+
         This method typically involves several calls to Client.message_callback_add.
         """
         pass
