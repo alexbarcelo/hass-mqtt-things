@@ -16,6 +16,7 @@ $ git clone https://github.com/alexbarcelo/hass-mqtt-things.git
 $ cd hass-mqtt-things
 $ python3 -m venv venv
 $ source venv/bin/activate
+$ pip install --upgrade pip
 $ pip install -e .
 $ export MQTT_HOST="hassio.local"
 $ export MQTT_USERNAME="user"
@@ -23,6 +24,9 @@ $ export MQTT_PASSWORD="password"
 $ cd examples
 $ python interactive_switch.py
 ```
+
+NOTE: I have put an explicit upgrade for the `pip` package because I am using the "new"
+setup.cfg approach, which doesn't work with certain old versions.
 
 Of course, you will need to change the `export` lines and adapt them to your MQTT
 setup (host/username/password).
