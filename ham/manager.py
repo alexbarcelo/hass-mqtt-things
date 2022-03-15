@@ -79,6 +79,7 @@ class MqttManager(Thread):
 
     def run(self):
         print(f"Establishing connection to { self.mqtt_host }:{ self.mqtt_port }")
+        self.client.will_set(self.availability_topic, "offline", retain=True)
         self.client.connect(self.mqtt_host, self.mqtt_port)
         self.client.loop_forever()
 
@@ -160,7 +161,6 @@ class MqttManager(Thread):
         # Set up availability topic
         ###########################
         self.client.publish(self.availability_topic, "online", retain=True)
-        self.client.will_set(self.availability_topic, "offline", retain=True)
 
     def _gen_device_info(self) -> dict:
         """Generate the device information payload."""
