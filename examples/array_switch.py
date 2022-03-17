@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Example of a dynamic instantiation of Switch instances.
 
 The BaseSwitch is instantiated multiple times, and has an internal "index"

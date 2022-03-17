@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Example of a the most simple usage of a Switch instance.
 
 The SimpleSwitch is an OptimisticSwitch that will appear on Home Assistant

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Example of a the most simple usage of a Switch instance.
 
 The SimpleLight is a DimmableLight that will appear on Home Assistant
@@ -24,7 +25,6 @@ class SimpleLight(DimmableLight):
         if brightness is not None:
             print("The brightness is set to: %d" % brightness)
         print("State is set to: %s" % state)
-
 
 
 if __name__ == "__main__":
