@@ -1,3 +1,4 @@
+import logging
 from threading import Thread
 from typing import List
 
@@ -10,6 +11,9 @@ import socket
 from .things import Thing
 
 from . import __version__
+
+
+logger = logging.getLogger(__name__)
 
 
 class MqttManager(Thread):
@@ -37,11 +41,16 @@ class MqttManager(Thread):
         """
         super().__init__()
 
+        logger.info("Initializing MqttManager; MQTT on %s:%s", host, port)
+
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         if username and password:
+            logger.debug("Setting up authentication")
             self.client.username_pw_set(username, password=password)
+        elif username or password:
+            logger.warning("Misconfigured credentials, check that both username and password are set")
 
         self.mqtt_host = host
         self.mqtt_port = port
@@ -68,6 +77,9 @@ class MqttManager(Thread):
 
         self.things = list()
 
+        logger.debug("Initialization parameters: node_id=%s, base_topic=%s, discovery_prefix=%s, name=%s",
+                     self.node_id, self.base_topic, self.discovery_prefix, self.name)
+
     def add_thing(self, thing: Thing):
         self.things.append(thing)
         thing.set_manager(self)
@@ -78,7 +90,7 @@ class MqttManager(Thread):
             thing.set_manager(self)
 
     def run(self):
-        print(f"Establishing connection to { self.mqtt_host }:{ self.mqtt_port }")
+        logger.info("Establishing connection to %s:%s", self.mqtt_host, self.mqtt_port)
         self.client.will_set(self.availability_topic, "offline", retain=True)
         self.client.connect(self.mqtt_host, self.mqtt_port)
         self.client.loop_forever()
@@ -94,23 +106,22 @@ class MqttManager(Thread):
     def _format_mac(mac: str) -> str:
         """Format the mac address string for entry into dev reg.
 
-        This has been taken from homeassistant/helpers/device_registry.py
+        This has been inspired by homeassistant/helpers/device_registry.py
         """
         to_test = mac
 
         if len(to_test) == 17 and to_test.count(":") == 5:
             return to_test.lower()
 
-        if len(to_test) == 17 and to_test.count("-") == 5:
-            to_test = to_test.replace("-", "")
-        elif len(to_test) == 14 and to_test.count(".") == 2:
-            to_test = to_test.replace(".", "")
+        to_test = to_test.replace("-", "")
+        to_test = to_test.replace(".", "")
 
         if len(to_test) == 12:
             # no : included
             return ":".join(to_test.lower()[i:i + 2] for i in range(0, 12, 2))
 
         # Not sure how formatted, return original
+        logger.warning("Not sure on the MAC, bypassing this: %s", mac)
         return mac
 
     def get_mac(self) -> str:
@@ -135,27 +146,32 @@ class MqttManager(Thread):
         # reconnect then subscriptions will be renewed.
         self.client.subscribe(self.subscribe_topic)
 
+        device_info = self._gen_device_info()
+
+        logger.debug("Device information being used for things: %s", device_info)
+
         common_config = {
             "~": self.base_topic,
             "availability_topic": self.availability_topic,
-            "device": self._gen_device_info(),
+            "device": device_info,
         }
 
         for thing in self.things:
+            logger.info("Publishing discovery message for: %r", thing)
             config = thing.get_config()
             config.update(common_config)
             config["unique_id"] = f"{ self.get_mac() }_{ thing.short_id }"
 
-            self.client.publish(
-                "%s/%s/%s/%s/config" % (
+            config_topic = "%s/%s/%s/%s/config" % (
                     self.discovery_prefix,
                     thing.component,
                     self.node_id,
                     thing.short_id
-                ),
-                json.dumps(config),
-                retain=True
-            )
+                )
+
+            logger.debug("Sending the following config dict to %s:\n%s", config_topic, config)
+
+            self.client.publish(config_topic, json.dumps(config), retain=True)
             thing.set_callbacks()
 
         # Set up availability topic

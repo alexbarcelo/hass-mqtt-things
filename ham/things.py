@@ -1,19 +1,24 @@
 from abc import ABCMeta, abstractmethod
+from typing import Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ham.manager import MqttManager
 
 
 class Thing(metaclass=ABCMeta):
     name: str
     short_id: str
+    mqtt_manager: "MqttManager"
 
     @property
     @abstractmethod
     def component(self):
         pass
 
-    def set_manager(self, mqtt_manager):
+    def set_manager(self, mqtt_manager: "MqttManager"):
         self.mqtt_manager = mqtt_manager
 
-    def get_config(self):
+    def get_config(self) -> dict:
         return {
             "name": self.name
         }
@@ -25,7 +30,7 @@ class Thing(metaclass=ABCMeta):
         """
         pass
 
-    def publish_state(self, state, substate='main'):
+    def publish_state(self, state: Union[bool, bytes, str, int, float], substate='main'):
         """Set the state of this entity.
 
         If use_state_topic attribute is True, then calling this method will
@@ -44,3 +49,6 @@ class Thing(metaclass=ABCMeta):
             f'{ self.mqtt_manager.base_topic }/{ self.short_id }/{ substate }',
             payload
         )
+
+    def __repr__(self) -> str:
+        return f"<{ self.__class__.__name__ } thing name={ self.name }, id={ self.short_id }>"

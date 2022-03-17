@@ -6,6 +6,11 @@ from .utils import WrapperCallback
 
 class Switch(Thing):
     """Basic class for a Switch entity."""
+
+    # The internal _state may or may not be used by the switch
+    # (e.g. OptimisticSwitch relies on it, but ExplicitSwitch ignores it altogether)
+    _state: bool = False
+
     @property
     def component(self):
         return "switch"
@@ -16,8 +21,10 @@ class Switch(Thing):
 
     def raw_callback(self, topic, payload):
         if payload == b'ON':
+            self._state = True
             return self.callback(True)
         elif payload == b'OFF':
+            self._state = False
             return self.callback(False)
 
     def get_config(self):
@@ -38,15 +45,12 @@ class OptimisticSwitch(Switch):
     "Optimistically" means that when the state is set (from Home Assistant or
     from the Python application) the switch becomes to that state.
     """
-
-    _state: bool = False
-
     @property
     def state(self):
         return self._state
 
     @state.setter
-    def state(self, value):
+    def state(self, value: bool):
         self._state = value
         self.publish_state(self._state)
 
@@ -70,8 +74,8 @@ class ExplicitSwitch(Switch):
     always working, and it is best to tie the state to a certain endstop and
     not to the activation trigger itself.
     """
-    def _set_state(self, value):
-        self.publish_state(self._state)
+    def _set_state(self, value: bool):
+        self.publish_state(value)
 
     # This is a write-only property, as the state is not tracked at Home Assistant
     state = property(fset=_set_state)
