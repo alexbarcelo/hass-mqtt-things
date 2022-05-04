@@ -46,6 +46,7 @@ class MqttManager(Thread):
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
+        self.client.on_disconnect = self.on_disconnect
         if username and password:
             logger.debug("Setting up authentication")
             self.client.username_pw_set(username, password=password)
@@ -93,7 +94,11 @@ class MqttManager(Thread):
         logger.info("Establishing connection to %s:%s", self.mqtt_host, self.mqtt_port)
         self.client.will_set(self.availability_topic, "offline", retain=True)
         self.client.connect(self.mqtt_host, self.mqtt_port)
-        self.client.loop_forever()
+        self.client.loop_forever(retry_first_connection=True)
+
+    def on_disconnect(self, _, userdata, rc):
+        if rc != 0:
+            logger.info("Unexpected MQTT disconnection (rc=%d).", rc)
 
     def on_message(self, _, userdata, msg):
         """React to a MQTT message.
@@ -140,7 +145,7 @@ class MqttManager(Thread):
         return f"{ self.base_topic }/+/set"
 
     def on_connect(self, _, userdata, flags, rc):
-        print("Connected with result code %s" % rc)
+        logger.info("Connected with result code %d", rc)
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
