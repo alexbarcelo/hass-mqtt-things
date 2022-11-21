@@ -142,7 +142,10 @@ class MqttManager(Thread):
 
     @property
     def subscribe_topic(self):
-        return f"{ self.base_topic }/+/set"
+        return [
+            (f"{ self.base_topic }/+/set", 0),  # Most things use `set`
+            (f"{ self.base_topic }/+/press", 0),  # Buttons use `press`
+        ]
 
     def on_connect(self, _, userdata, flags, rc):
         logger.info("Connected with result code %d", rc)
