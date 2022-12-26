@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING, LiteralString, ClassVar
 
 if TYPE_CHECKING:
     from ham.manager import MqttManager
@@ -10,6 +10,8 @@ class Thing(metaclass=ABCMeta):
     short_id: str
     mqtt_manager: "MqttManager"
 
+    config_fields: ClassVar[list[LiteralString]]
+
     @property
     @abstractmethod
     def component(self):
@@ -18,10 +20,14 @@ class Thing(metaclass=ABCMeta):
     def set_manager(self, mqtt_manager: "MqttManager"):
         self.mqtt_manager = mqtt_manager
 
-    def get_config(self) -> dict:
-        return {
-            "name": self.name
-        }
+    def get_config(self) -> dict[str, Union[int, float, str]]:
+        ret = dict()
+
+        for config_field_name in self.config_fields:
+            if hasattr(self, config_field_name):
+                ret[config_field_name] = getattr(self, config_field_name)
+
+        ret["name"] = self.name
 
     def set_callbacks(self):
         """Establish the callbacks for this Thing.

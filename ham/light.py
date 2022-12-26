@@ -13,6 +13,14 @@ class Light(Thing):
     need that, but it makes it more modular and consistent across all supported
     lights in this library.
     """
+    schema: str = "json"
+    optimistic: bool
+    color_mode: bool
+    brightness: bool
+    brightness_scale: int
+
+    config_fields = ["schema", "optimistic", "color_mode", "brightness", "brightness_scale"]
+
     @property
     def component(self):
         return "light"
@@ -27,7 +35,6 @@ class Light(Thing):
     def get_config(self):
         config = super().get_config()
         config["command_topic"] = f'~/{ self.short_id }/set'
-        config["schema"] = "json"
         return config
 
     def set_callbacks(self):
@@ -38,15 +45,15 @@ class Light(Thing):
 
 
 class DimmableLight(Light):
-    BRIGHTNESS_SCALE = 255
-
     """An optimistic dimmable Light with no additional features."""
+
+    optimistic = True
+    color_mode = True
+    brightness = True
+    brightness_scale = 255
+
     def get_config(self):
         config = super().get_config()
-        config["optimistic"] = True
-        config["color_mode"] = True
-        config["brightness"] = True
-        config["brightness_scale"] = self.BRIGHTNESS_SCALE
         config["supported_color_modes"] = ["brightness"]
         return config
 

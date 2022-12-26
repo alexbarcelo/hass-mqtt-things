@@ -6,6 +6,11 @@ from .utils import WrapperCallback
 
 class Number(Thing):
     """Basic class for a Number entity."""
+    min: float
+    max: float
+    step: float
+
+    config_fields = ["min", "max", "step"]
 
     _state: float = 1.0
 

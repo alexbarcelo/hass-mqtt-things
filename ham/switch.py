@@ -7,6 +7,10 @@ from .utils import WrapperCallback
 class Switch(Thing):
     """Basic class for a Switch entity."""
 
+    optimistic: bool
+
+    config_fields = ["optimistic"]
+    
     # The internal _state may or may not be used by the switch
     # (e.g. OptimisticSwitch relies on it, but ExplicitSwitch ignores it altogether)
     _state: bool = False
