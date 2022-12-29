@@ -17,7 +17,7 @@ class Thing(metaclass=ABCMeta):
     short_id: str
     mqtt_manager: "MqttManager"
 
-    config_fields: ClassVar[list[LiteralString]]
+    config_fields: ClassVar[list[LiteralString]] = []
 
     @property
     @abstractmethod
