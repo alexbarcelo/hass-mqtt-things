@@ -35,6 +35,7 @@ class Thing(metaclass=ABCMeta):
                 ret[config_field_name] = getattr(self, config_field_name)
 
         ret["name"] = self.name
+        return ret
 
     def set_callbacks(self):
         """Establish the callbacks for this Thing.
