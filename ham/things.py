@@ -1,5 +1,12 @@
 from abc import ABCMeta, abstractmethod
-from typing import Union, TYPE_CHECKING, LiteralString, ClassVar
+from typing import Union, TYPE_CHECKING, ClassVar
+
+# LiteralString is from Python 3.11;
+# atm, we want to support Python 3.9
+try:
+    from typing import LiteralString
+except ImportError:
+    LiteralString = str
 
 if TYPE_CHECKING:
     from ham.manager import MqttManager
