@@ -1,3 +1,68 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hass-mqtt-things"
+dynamic = ["version"]
+description = "Library for rapid development of things to be integrated with Home Assistant through MQTT"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [
+  { name = "Alex Barcelo", email = "alex@betarho.net" },
+]
+keywords = [
+  "home-assistant",
+  "things",
+  "home automation",
+  "iot",
+  "internet of things",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: Apache Software License",
+  "Topic :: Home Automation",
+  "Intended Audience :: Developers",
+]
+dependencies = [
+  "paho-mqtt",
+  "getmac",
+]
+
+[project.urls]
+Documentation = "https://github.com/alexbarcelo/hass-mqtt-things#readme"
+Issues = "https://github.com/alexbarcelo/hass-mqtt-things/issues"
+Source = "https://github.com/alexbarcelo/hass-mqtt-things"
+
+
+[tool.hatch.version]
+path = "src/ham/__init__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "pytest-docker",
+  "homeassistant_api",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/tests",
+  "/examples",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ham"]
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
