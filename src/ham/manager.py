@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 class MqttManager(Thread):
     things: List[Thing]
     client: mqtt.Client
-    mqtt_host: str
-    mqtt_port: int
     node_id: str
     base_topic: str
     name: str
@@ -53,8 +51,10 @@ class MqttManager(Thread):
         elif username or password:
             logger.warning("Misconfigured credentials, check that both username and password are set")
 
-        self.mqtt_host = host
-        self.mqtt_port = port
+        # Asynchronous connect
+        # which will not be made effective until the 
+        # run() calls the .loop* method of the client
+        self.client.connect_async(host, port)
 
         self.discovery_prefix = discovery_prefix
 
@@ -91,9 +91,8 @@ class MqttManager(Thread):
             thing.set_manager(self)
 
     def run(self):
-        logger.info("Establishing connection to %s:%s", self.mqtt_host, self.mqtt_port)
         self.client.will_set(self.availability_topic, "offline", retain=True)
-        self.client.connect(self.mqtt_host, self.mqtt_port)
+        logger.info("Starting MQTT client loop")
         self.client.loop_forever(retry_first_connection=True)
 
     def on_disconnect(self, _, userdata, rc):
