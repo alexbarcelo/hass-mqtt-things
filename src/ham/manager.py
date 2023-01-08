@@ -165,9 +165,14 @@ class MqttManager(Thread):
 
         for thing in self.things:
             logger.info("Publishing discovery message for: %r", thing)
-            config = thing.get_config()
-            config.update(common_config)
+            
+            # New dictionary with sensible defaults
+            config = common_config.copy()
             config["unique_id"] = f"{ self.get_mac() }_{ thing.short_id }"
+
+            # Then call get_config, and allow the implementation to override
+            # the previously set defaults (at their own risk)
+            config.update(thing.get_config())
 
             config_topic = "%s/%s/%s/%s/config" % (
                     self.discovery_prefix,
