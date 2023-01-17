@@ -1,6 +1,7 @@
 import logging
+from collections import defaultdict
 from threading import Thread
-from typing import List
+from typing import TypedDict, Optional
 
 from getmac import get_mac_address
 import paho.mqtt.client as mqtt
@@ -15,9 +16,21 @@ from . import __version__
 
 logger = logging.getLogger(__name__)
 
+class DeviceInfo(TypedDict, total=False):
+    configuration_url: str
+    connections: list[tuple[str, str]]
+    hw_version: str
+    identifiers: list[str]
+    manufacturer: str
+    model: str
+    name: str
+    suggested_area: str
+    sw_version: str
+    via_device: str
+
 
 class MqttManager(Thread):
-    things: List[Thing]
+    things: dict[Optional[DeviceInfo], list[Thing]]
     client: mqtt.Client
     node_id: str
     base_topic: str
@@ -76,17 +89,17 @@ class MqttManager(Thread):
         else:
             self.name = self.node_id
 
-        self.things = list()
+        self.things = defaultdict(list)
 
         logger.debug("Initialization parameters: node_id=%s, base_topic=%s, discovery_prefix=%s, name=%s",
                      self.node_id, self.base_topic, self.discovery_prefix, self.name)
 
-    def add_thing(self, thing: Thing):
-        self.things.append(thing)
+    def add_thing(self, thing: Thing, origin: Optional[DeviceInfo] = None):
+        self.things[origin].append(thing)
         thing.set_manager(self)
 
-    def add_things(self, things: List[Thing]):
-        self.things.extend(things)
+    def add_things(self, things: list[Thing], origin: Optional[DeviceInfo] = None):
+        self.things[origin].extend(things)
         for thing in things:
             thing.set_manager(self)
 
@@ -153,44 +166,53 @@ class MqttManager(Thread):
         # reconnect then subscriptions will be renewed.
         self.client.subscribe(self.subscribe_topic)
 
-        device_info = self._gen_device_info()
+        self_device_info = self._gen_device_info()
 
-        logger.debug("Device information being used for things: %s", device_info)
+        logger.debug("Device information for this manager: %s", self_device_info)
 
-        common_config = {
-            "~": self.base_topic,
-            "availability_topic": self.availability_topic,
-            "device": device_info,
-        }
+        for origin, things in self.things.items():
+            if origin is None:
+                common_config = {
+                    "~": self.base_topic,
+                    "availability_topic": self.availability_topic,
+                    "device": self_device_info,
+                }
+            else:
+                common_config = {
+                    "~": self.base_topic,
+                    "availability_topic": self.availability_topic,
+                    "device": origin,
+                    "via": self_device_info["identifiers"][0]
+                }
 
-        for thing in self.things:
-            logger.info("Publishing discovery message for: %r", thing)
-            
-            # New dictionary with sensible defaults
-            config = common_config.copy()
-            config["unique_id"] = f"{ self.get_mac() }_{ thing.short_id }"
+            for thing in things:
+                logger.info("Publishing discovery message for: %r", thing)
+                
+                # New dictionary with sensible defaults
+                config = common_config.copy()
+                config["unique_id"] = f"{ self.get_mac() }_{ thing.short_id }"
 
-            # Then call get_config, and allow the implementation to override
-            # the previously set defaults (at their own risk)
-            config.update(thing.get_config())
+                # Then call get_config, and allow the implementation to override
+                # the previously set defaults (at their own risk)
+                config.update(thing.get_config())
 
-            config_topic = "%s/%s/%s/%s/config" % (
-                    self.discovery_prefix,
-                    thing.component,
-                    self.node_id,
-                    thing.short_id
-                )
+                config_topic = "%s/%s/%s/%s/config" % (
+                        self.discovery_prefix,
+                        thing.component,
+                        self.node_id,
+                        thing.short_id
+                    )
 
-            logger.debug("Sending the following config dict to %s:\n%s", config_topic, config)
+                logger.debug("Sending the following config dict to %s:\n%s", config_topic, config)
 
-            self.client.publish(config_topic, json.dumps(config), retain=True)
-            thing.set_callbacks()
+                self.client.publish(config_topic, json.dumps(config), retain=True)
+                thing.set_callbacks()
 
         # Set up availability topic
         ###########################
         self.client.publish(self.availability_topic, "online", retain=True)
 
-    def _gen_device_info(self) -> dict:
+    def _gen_device_info(self) -> DeviceInfo:
         """Generate the device information payload."""
         mac_address = self.get_mac()
         return {
