@@ -69,8 +69,12 @@ class Thing(metaclass=ABCMeta):
 
         self.publish_mqtt_message(payload, "main")
 
+    @property
+    def attributes(self):
+        raise AttributeError("Attributes is write-only by design")
 
-    def publish_attributes(self, attributes: Any):
+    @attributes.setter
+    def attributes(self, attributes: Any):
         """Publish the JSON attributes of this entity."""
         self.publish_mqtt_message(bytes(json.dumps(attributes)), "attrs")
 
