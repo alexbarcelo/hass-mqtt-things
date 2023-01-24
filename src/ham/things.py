@@ -76,7 +76,7 @@ class Thing(metaclass=ABCMeta):
     @attributes.setter
     def attributes(self, attributes: Any):
         """Publish the JSON attributes of this entity."""
-        self.publish_mqtt_message(bytes(json.dumps(attributes)), "attrs")
+        self.publish_mqtt_message(bytes(json.dumps(attributes), "utf-8"), "attrs")
 
     def __repr__(self) -> str:
         return f"<{ self.__class__.__name__ } thing name={ self.name }, id={ self.short_id }>"
