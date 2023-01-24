@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import json
-from typing import Union, TYPE_CHECKING, ClassVar, Any
+from typing import Union, TYPE_CHECKING, ClassVar
 
 # LiteralString is from Python 3.11;
 # atm, we want to support Python 3.9
@@ -74,7 +74,7 @@ class Thing(metaclass=ABCMeta):
         raise AttributeError("Attributes is write-only by design")
 
     @attributes.setter
-    def attributes(self, attributes: Any):
+    def attributes(self, attributes: dict):
         """Publish the JSON attributes of this entity."""
         self.publish_mqtt_message(bytes(json.dumps(attributes), "utf-8"), "attrs")
 
