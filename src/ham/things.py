@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import Union, TYPE_CHECKING, ClassVar
+import json
+from typing import Union, TYPE_CHECKING, ClassVar, Any
 
 # LiteralString is from Python 3.11;
 # atm, we want to support Python 3.9
@@ -35,6 +36,7 @@ class Thing(metaclass=ABCMeta):
                 ret[config_field_name] = getattr(self, config_field_name)
 
         ret["name"] = self.name
+        ret["json_attributes_topic"] = f'~/{ self.short_id }/attrs'
         return ret
 
     def set_callbacks(self):
@@ -44,7 +46,13 @@ class Thing(metaclass=ABCMeta):
         """
         pass
 
-    def publish_state(self, state: Union[bool, bytes, str, int, float], substate='main'):
+    def publish_mqtt_message(self, payload: bytes, substate: str):
+        self.mqtt_manager.client.publish(
+            f'{ self.mqtt_manager.base_topic }/{ self.short_id }/{ substate }',
+            payload
+        )
+
+    def publish_state(self, state: Union[bool, bytes, str, int, float]):
         """Set the state of this entity.
 
         If use_state_topic attribute is True, then calling this method will
@@ -59,10 +67,12 @@ class Thing(metaclass=ABCMeta):
         else:
             payload = bytes(str(state), "UTF-8")
 
-        self.mqtt_manager.client.publish(
-            f'{ self.mqtt_manager.base_topic }/{ self.short_id }/{ substate }',
-            payload
-        )
+        self.publish_mqtt_message(payload, "main")
+
+
+    def publish_attributes(self, attributes: Any):
+        """Publish the JSON attributes of this entity."""
+        self.publish_mqtt_message(bytes(json.dumps(attributes)), "attrs")
 
     def __repr__(self) -> str:
         return f"<{ self.__class__.__name__ } thing name={ self.name }, id={ self.short_id }>"
