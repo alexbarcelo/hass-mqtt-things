@@ -90,6 +90,7 @@ class MqttManager(Thread):
             self.name = self.node_id
 
         self.things = defaultdict(list)
+        self.device_info = self._gen_device_info()
 
         logger.debug("Initialization parameters: node_id=%s, base_topic=%s, discovery_prefix=%s, name=%s",
                      self.node_id, self.base_topic, self.discovery_prefix, self.name)
@@ -166,23 +167,21 @@ class MqttManager(Thread):
         # reconnect then subscriptions will be renewed.
         self.client.subscribe(self.subscribe_topic)
 
-        self_device_info = self._gen_device_info()
-
-        logger.debug("Device information for this manager: %s", self_device_info)
+        logger.debug("Device information for this manager: %s", self.device_info)
 
         for origin, things in self.things.items():
             if origin is None:
                 common_config = {
                     "~": self.base_topic,
                     "availability_topic": self.availability_topic,
-                    "device": self_device_info,
+                    "device": self.device_info,
                 }
             else:
                 common_config = {
                     "~": self.base_topic,
                     "availability_topic": self.availability_topic,
                     "device": origin,
-                    "via": self_device_info["identifiers"][0]
+                    "via": self.device_info["identifiers"][0]
                 }
 
             for thing in things:
