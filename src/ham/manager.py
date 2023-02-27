@@ -35,10 +35,12 @@ class MqttManager(Thread):
     node_id: str
     base_topic: str
     name: str
+    unique_identifier: str
 
     def __init__(self, host='localhost', port=1883, username=None,
                  password=None, *, node_id=None, base_topic=None,
-                 discovery_prefix='homeassistant', name=None):
+                 discovery_prefix='homeassistant', name=None,
+                 unique_identifier=None):
         """Initialize connection to the MQTT the server.
 
         This will prepare the MQTT connection using the provided configuration
@@ -49,6 +51,15 @@ class MqttManager(Thread):
         If not specified, the hostname will be used for both `node_id` and
         `base_topic` while the default 'homeassistant' will be used as the
         `discovery_prefix`.
+
+        Setting `unique_identifier` is somewhat advanced. See:
+        https://developers.home-assistant.io/docs/entity_registry_index 
+
+        If you set the `unique_identifier`, it will be used for generating the
+        unique_id for the Things. If not set, the mac of the device will be used
+        (recommended). Set this ONLY if the MAC of the host is erratic (e.g. if
+        you are using certain ARM single-board-computers that are MACless, 
+        or if you are deploying into kubernetes).
         """
         super().__init__()
 
@@ -90,6 +101,7 @@ class MqttManager(Thread):
             self.name = self.node_id
 
         self.things = defaultdict(list)
+        self.unique_identifier = unique_identifier or self.get_mac()
         self.device_info = self._gen_device_info()
 
         logger.debug("Initialization parameters: node_id=%s, base_topic=%s, discovery_prefix=%s, name=%s",
@@ -189,7 +201,7 @@ class MqttManager(Thread):
                 
                 # New dictionary with sensible defaults
                 config = common_config.copy()
-                config["unique_id"] = f"{ self.get_mac() }_{ thing.short_id }"
+                config["unique_id"] = f"{ self.unique_identifier }_{ thing.short_id }"
 
                 # Then call get_config, and allow the implementation to override
                 # the previously set defaults (at their own risk)
@@ -213,10 +225,9 @@ class MqttManager(Thread):
 
     def _gen_device_info(self) -> DeviceInfo:
         """Generate the device information payload."""
-        mac_address = self.get_mac()
         return {
             "name": self.name,
-            "identifiers": [f"{self.name}_{mac_address}"],
-            "connections": [("mac", mac_address)],
+            "identifiers": [f"{self.name}_{self.unique_identifier}"],
+            "connections": [("mac", self.get_mac())],
             "sw_version": __version__,
         }
