@@ -169,6 +169,7 @@ class MqttManager(Thread):
     def subscribe_topic(self):
         return [
             (f"{ self.base_topic }/+/set", 0),  # Most things use `set`
+            (f"{ self.base_topic }/+/+/set", 0),  # Some things are nested (at least: fans)
             (f"{ self.base_topic }/+/press", 0),  # Buttons use `press`
         ]
 
