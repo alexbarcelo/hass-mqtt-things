@@ -21,6 +21,8 @@ MQTT_HOST = os.environ["MQTT_HOST"]
 class SimpleNumber(OptimisticNumber):
     name = "Awesomest Number"
     short_id = "moreawesome"
+    device_class = "data_size"
+    unit_of_measurement = "MiB"
 
     def callback(self, state: float):
         super().callback(state)

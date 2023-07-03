@@ -9,8 +9,11 @@ class Number(Thing):
     min: float
     max: float
     step: float
+    device_class: str
+    unit_of_measurement: str
 
-    config_fields = ["min", "max", "step"]
+    config_fields = ["min", "max", "step",
+                     "device_class", "unit_of_measurement"]
 
     _state: float = 1.0
 
