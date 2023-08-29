@@ -1,4 +1,4 @@
-__version__ = "0.5.6"
+__version__ = "0.5.9"
 
 from .manager import MqttManager, DeviceInfo
 
