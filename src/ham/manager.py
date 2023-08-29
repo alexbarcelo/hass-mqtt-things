@@ -30,7 +30,7 @@ class DeviceInfo(TypedDict, total=False):
 
 
 class MqttManager(Thread):
-    things: dict[Optional[DeviceInfo], list[Thing]]
+    things: list[tuple[Optional[DeviceInfo], Thing]]
     client: mqtt.Client
     node_id: str
     base_topic: str
@@ -100,7 +100,7 @@ class MqttManager(Thread):
         else:
             self.name = self.node_id
 
-        self.things = defaultdict(list)
+        self.things = list()
         self.unique_identifier = unique_identifier or self.get_mac()
         self.device_info = self._gen_device_info()
 
@@ -108,12 +108,12 @@ class MqttManager(Thread):
                      self.node_id, self.base_topic, self.discovery_prefix, self.name)
 
     def add_thing(self, thing: Thing, origin: Optional[DeviceInfo] = None):
-        self.things[origin].append(thing)
+        self.things.append((origin, thing))
         thing.set_manager(self)
 
     def add_things(self, things: list[Thing], origin: Optional[DeviceInfo] = None):
-        self.things[origin].extend(things)
         for thing in things:
+            self.things.append((origin, thing))
             thing.set_manager(self)
 
     def run(self):
@@ -182,7 +182,7 @@ class MqttManager(Thread):
 
         logger.debug("Device information for this manager: %s", self.device_info)
 
-        for origin, things in self.things.items():
+        for origin, thing in self.things:
             if origin is None:
                 common_config = {
                     "~": self.base_topic,
@@ -197,28 +197,27 @@ class MqttManager(Thread):
                     "via": self.device_info["identifiers"][0]
                 }
 
-            for thing in things:
-                logger.info("Publishing discovery message for: %r", thing)
-                
-                # New dictionary with sensible defaults
-                config = common_config.copy()
-                config["unique_id"] = f"{ self.unique_identifier }_{ thing.short_id }"
+            logger.info("Publishing discovery message for: %r", thing)
+            
+            # New dictionary with sensible defaults
+            config = common_config.copy()
+            config["unique_id"] = f"{ self.unique_identifier }_{ thing.short_id }"
 
-                # Then call get_config, and allow the implementation to override
-                # the previously set defaults (at their own risk)
-                config.update(thing.get_config())
+            # Then call get_config, and allow the implementation to override
+            # the previously set defaults (at their own risk)
+            config.update(thing.get_config())
 
-                config_topic = "%s/%s/%s/%s/config" % (
-                        self.discovery_prefix,
-                        thing.component,
-                        self.node_id,
-                        thing.short_id
-                    )
+            config_topic = "%s/%s/%s/%s/config" % (
+                    self.discovery_prefix,
+                    thing.component,
+                    self.node_id,
+                    thing.short_id
+                )
 
-                logger.debug("Sending the following config dict to %s:\n%s", config_topic, config)
+            logger.debug("Sending the following config dict to %s:\n%s", config_topic, config)
 
-                self.client.publish(config_topic, json.dumps(config), retain=True)
-                thing.set_callbacks()
+            self.client.publish(config_topic, json.dumps(config), retain=True)
+            thing.set_callbacks()
 
         # Set up availability topic
         ###########################
